@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Offense</title>
+<link rel="icon" type="image/jpg" href="school logo.jpg"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #e9fff0 0%, #c1e8cc 100%);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+.container {
+    background: #fff;
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+    width: 100%;
+    max-width: 500px;
+    border-top: 6px solid #147538;
+}
+h2 {
+    text-align: center;
+    color: #147538;
+    font-weight: 600;
+    font-size: 26px;
+    margin-bottom: 25px;
+}
+.student-info-box {
+    background: #f1f8e9;
+    color: #2e7d32;
+    padding: 18px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: 500;
+    margin-bottom: 30px;
+    border-left: 6px solid #147538;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 16px;
+}
+label {
+    display: block;
+    margin-top: 18px;
+    font-weight: 500;
+    font-size: 14px;
+    color: #444;
+}
+input, select {
+    width: 100%;
+    padding: 14px 16px;
+    margin-top: 8px;
+    border: 2px solid #eee;
+    border-radius: 10px;
+    font-size: 14px;
+    background: #fafafa;
+    transition: all 0.3s ease;
+}
+input:focus, select:focus {
+    border-color: #147538;
+    background: #fff;
+    outline: none;
+    box-shadow: 0 0 6px rgba(20, 117, 56, 0.15);
+}
+.btn-group {
+    display: flex;
+    gap: 16px;
+    margin-top: 32px;
+}
+button {
+    flex: 1;
+    padding: 14px;
+    border-radius: 10px;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.save-btn {
+    background: #147538;
+    color: #fff;
+}
+.save-btn:hover {
+    background: #0f5f2e;
+}
+.cancel-btn {
+    background: #fff;
+    border: 2px solid #ddd;
+    color: #666;
+}
+.cancel-btn:hover {
+    background: #f5f5f5;
+    color: #333;
+    border-color: #bbb;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2><i class="fas fa-user-edit"></i> Add Offense Record</h2>
+
+    <div id="studentNameDisplay" class="student-info-box">
+        <i class="fas fa-spinner fa-spin"></i> Loading student info...
+    </div>
+
+    <form id="offenseForm">
+        <label><i class="fas fa-exclamation-circle"></i> Offense Type</label>
+        <select id="offenseType" required>
+            <option value="minor">🟡 Minor Offense</option>
+            <option value="major">🔴 Major Offense</option>
+        </select>
+
+        <label><i class="fas fa-pen"></i> Add Offense</label>
+        <!-- Default text input for Major offense -->
+        <input type="text" id="offenseDescInput" placeholder="e.g. Cheating, Gambling">
+        <!-- Hidden dropdown for Minor offense -->
+        <select id="offenseDescSelect" style="display:none;">
+            <option value="">Select Minor Offense</option>
+            <option value="NO ID">NO ID</option>
+            <option value="NO UNIFORM">NO UNIFORM</option>
+            <option value="NO SHOES">NO SHOES</option>
+            <option value="DRESS CODE">DRESS CODE</option>
+            <option value="HAIR COLOR">HAIR COLOR</option>
+             <option value="MISLONDUCT">MISLONDUCT</option>
+        </select>
+        <!-- Text input for "Others" minor offense -->
+        <input type="text" id="offenseMinorOther" placeholder="Specify Other Minor Offense" style="display:none; margin-top:8px;">
+
+        <label><i class="far fa-calendar-alt"></i> Date of Offense</label>
+        <input type="date" id="offenseDate" required>
+
+        <div class="btn-group">
+            <button type="button" class="cancel-btn" onclick="window.location.href='records.html'">
+                Cancel
+            </button>
+            <button type="submit" class="save-btn">
+                <i class="fas fa-save"></i> Save Record
+            </button>
+        </div>
+    </form>
+</div>
+
+<script type="module">
+// Firebase imports
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+import { getFirestore, doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDFT7z-AmRLu8lig84D_tKA9OhF7joW9c0",
+    authDomain: "sasosystem-206d0.firebaseapp.com",
+    projectId: "sasosystem-206d0",
+    storageBucket: "sasosystem-206d0.firebasestorage.app",
+    messagingSenderId: "526763192518",
+    appId: "1:526763192518:web:b1f544270439e8664067c7"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const docId = new URLSearchParams(window.location.search).get('id');
+document.getElementById('offenseDate').valueAsDate = new Date();
+
+let currentData = {};
+
+// Load student data
+async function loadStudent() {
+    if (!docId) return window.location.href = 'records.html';
+    const docRef = doc(db, "studentRecords", docId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+        currentData = docSnap.data();
+        document.getElementById("studentNameDisplay").innerHTML = `<i class="fas fa-user-graduate"></i> &nbsp; ${currentData.name || 'Unknown'} <br><small>(${currentData.student_number || 'No ID'})</small>`;
+    } else {
+        alert("Student record not found!");
+        window.location.href = 'records.html';
+    }
+}
+
+loadStudent();
+
+// Toggle offense input/dropdown based on type
+const offenseType = document.getElementById("offenseType");
+const offenseDescInput = document.getElementById("offenseDescInput");
+const offenseDescSelect = document.getElementById("offenseDescSelect");
+const offenseMinorOther = document.getElementById("offenseMinorOther");
+
+offenseType.addEventListener("change", () => {
+    if (offenseType.value === "minor") {
+        offenseDescInput.style.display = "none";
+        offenseDescSelect.style.display = "block";
+    } else {
+        offenseDescInput.style.display = "block";
+        offenseDescSelect.style.display = "none";
+        offenseMinorOther.style.display = "none";
+    }
+});
+
+// Show "Other" input if Minor offense is Others
+offenseDescSelect.addEventListener("change", () => {
+    if (offenseDescSelect.value === "Others") {
+        offenseMinorOther.style.display = "block";
+    } else {
+        offenseMinorOther.style.display = "none";
+        offenseMinorOther.value = "";
+    }
+});
+
+// Count offenses in string
+function countOffenses(str) {
+    return str && str.trim() !== "" ? str.split("|").length : 0;
+}
+
+// Form submission
+document.getElementById("offenseForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    let type = offenseType.value;
+    let desc = "";
+
+    if (type === "minor") {
+        desc = offenseDescSelect.value === "Others" ? offenseMinorOther.value.trim() : offenseDescSelect.value;
+    } else {
+        desc = offenseDescInput.value.trim();
+    }
+
+    const date = document.getElementById("offenseDate").value;
+
+    if (!desc || !date) return alert("Please fill in all fields.");
+
+    const offenseWithDate = `${desc} (${date})`;
+    const button = document.querySelector(".save-btn");
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+    try {
+        let newMajor = currentData.major || "";
+        let newMinor = currentData.minor || "";
+
+        if (type === "major") newMajor = newMajor ? newMajor + " | " + offenseWithDate : offenseWithDate;
+        else newMinor = newMinor ? newMinor + " | " + offenseWithDate : offenseWithDate;
+
+        const totalMajor = countOffenses(newMajor);
+        const totalMinor = countOffenses(newMinor);
+        const grandTotal = totalMajor + totalMinor;
+
+        await updateDoc(doc(db, "studentRecords", docId), {
+            major: newMajor,
+            minor: newMinor,
+            offense_count: grandTotal,
+            last_updated: serverTimestamp()
+        });
+
+        alert(`Offense added! Total Major: ${totalMajor}, Total Minor: ${totalMinor}`);
+        window.location.href = 'records.html';
+    } catch (err) {
+        console.error(err);
+        alert("Error: " + err.message);
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-save"></i> Save Record';
+    }
+});
+</script>
+
+</body>
+</html>

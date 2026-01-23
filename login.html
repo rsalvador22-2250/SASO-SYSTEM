@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secure Login</title>
+<link rel="icon" type="image/jpg" href="school logo.jpg"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+/* ===== Global ===== */
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+
+body, html {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #baf3c0, #e9fff0);
+}
+
+/* ===== Login Card ===== */
+.login-container {
+    background: #ffffff;
+    padding: 50px 35px;
+    width: 100%;
+    max-width: 400px;
+    border-radius: 15px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.login-container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+}
+
+.login-container img.logo {
+    width: 130px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    border: 2px solid #1a5e37;
+    padding: 5px;
+}
+
+.login-container h2 {
+    font-weight: 600;
+    color: #1a5e37;
+    margin-bottom: 30px;
+}
+
+/* ===== Input Fields ===== */
+.input-wrapper {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.input-wrapper i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #296b41aa;
+    transition: color 0.3s;
+}
+
+.login-container input {
+    width: 100%;
+    padding: 15px 15px 15px 40px;
+    border-radius: 8px;
+    border: 1.5px solid #d4d4d4;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.login-container input:focus {
+    outline: none;
+    border-color: #296b41;
+    box-shadow: 0 0 8px rgba(41,107,65,0.2);
+}
+
+.password-wrapper .toggle-eye {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 18px;
+    color: #296b41aa;
+    transition: color 0.3s, transform 0.2s;
+}
+
+.password-wrapper .toggle-eye:hover {
+    transform: translateY(-50%) scale(1.2);
+    color: #1a5e37;
+}
+
+/* ===== Button ===== */
+.login-container button {
+    width: 100%;
+    padding: 15px;
+    border-radius: 8px;
+    border: none;
+    font-size: 1.1rem;
+    font-weight: 500;
+    cursor: pointer;
+    background: #296b41;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.login-container button:hover {
+    background: #1a5e37;
+    transform: translateY(-2px);
+}
+
+/* ===== Error Message ===== */
+#error {
+    color: #e74c3c;
+    font-size: 0.95rem;
+    margin-top: 10px;
+    display: none;
+}
+
+/* ===== Responsive ===== */
+@media(max-width: 450px) {
+    .login-container {
+        padding: 40px 25px;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="login-container">
+    <img src="school logo.jpg" class="logo" alt="Logo">
+    <h2>Login</h2>
+
+    <div class="input-wrapper">
+        <i class="fas fa-envelope"></i>
+        <input type="email" id="email" placeholder="Email Address" required>
+    </div>
+
+    <div class="input-wrapper password-wrapper">
+        <i class="fas fa-lock"></i>
+        <input type="password" id="password" placeholder="Password" required>
+        <span class="toggle-eye" onclick="togglePassword()">👁️</span>
+    </div>
+
+    <button onclick="login()">Log In</button>
+    <p id="error"></p>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDFT7z-AmRLu8lig84D_tKA9OhF7joW9c0",
+    authDomain: "sasosystem-206d0.firebaseapp.com",
+    projectId: "sasosystem-206d0",
+    storageBucket: "sasosystem-206d0.firebasestorage.app",
+    messagingSenderId: "526763192518",
+    appId: "1:526763192518:web:b1f544270439e8664067c7"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+// Toggle password visibility
+window.togglePassword = () => {
+    const pass = document.getElementById("password");
+    const eye = document.querySelector(".toggle-eye");
+    if(pass.type === "password"){ 
+        pass.type = "text"; 
+        eye.innerText="🙈"; 
+    } else { 
+        pass.type = "password"; 
+        eye.innerText="👁️"; 
+    }
+};
+
+// Login
+window.login = async () => {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const errorDisplay = document.getElementById("error");
+    errorDisplay.style.display = "none";
+
+    if(!email || !password){
+        errorDisplay.innerText = "Please enter both email and password.";
+        errorDisplay.style.display = "block";
+        return;
+    }
+
+    try{
+        await signInWithEmailAndPassword(auth, email, password);
+        localStorage.setItem("loggedIn", "true");
+        window.location.href = "index.html";
+    } catch(err){
+        let message = "An unknown error occurred.";
+        if(["auth/invalid-email","auth/user-not-found","auth/wrong-password"].includes(err.code)){
+            message = "Invalid email or password.";
+        }
+        errorDisplay.innerText = message;
+        errorDisplay.style.display="block";
+    }
+};
+</script>
+
+</body>
+</html>

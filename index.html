@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Student Record</title>
+<link rel="icon" type="image/jpg" href="school logo.jpg"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+body, html { height:100%; background: linear-gradient(135deg,#baf3c0,#e9fff0); display:flex; justify-content:center; align-items:center; padding:20px; }
+.container { background:#fff; padding:40px 30px; border-radius:20px; width:100%; max-width:500px; box-shadow:0 15px 40px rgba(0,0,0,0.12); transition:all 0.3s ease; }
+.container:hover { transform:translateY(-3px); box-shadow:0 25px 50px rgba(0,0,0,0.15); }
+.container h2 { text-align:center; color:#1a5e37; margin-bottom:30px; font-weight:600; }
+input, select { width:100%; padding:14px 15px; margin-bottom:15px; border-radius:10px; border:1.5px solid #d4d4d4; font-size:16px; background:#fff; transition:all 0.3s ease; }
+input:focus, select:focus { outline:none; border-color:#296b41; box-shadow:0 0 8px rgba(41,107,65,0.2); }
+button { width:100%; padding:14px; margin-bottom:12px; border-radius:10px; border:none; font-size:16px; font-weight:500; cursor:pointer; transition:all 0.3s ease; }
+#saveBtn { background:#296b41; color:#fff; } #saveBtn:hover { background:#1a5e37; transform:translateY(-1px); }
+button.viewBtn { background:#1a521b; color:#fff; } button.viewBtn:hover { background:#3e8e41; transform:translateY(-1px); }
+button.logoutBtn { background:#d9534f; color:#fff; } button.logoutBtn:hover { background:#c12b2b; transform:translateY(-1px); }
+#status { font-size:14px; margin-top:10px; text-align:center; }
+@media(max-width:480px){ .container{padding:30px 20px;} input, select, button{padding:12px;font-size:14px;} }
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>Add Student Record</h2>
+<form id="recordForm">
+    <input type="text" id="name" placeholder="Full Name" required>
+    <input type="text" id="student_number" placeholder="Student Number" required>
+    <input type="email" id="cca_email" placeholder="CCA Email" required>
+    <input type="text" id="course" placeholder="Course / Section" required>
+    <input type="text" id="major" placeholder="Major Offense">
+
+    <select id="minor">
+        <option value="">Select Minor Offense (optional)</option>
+        <option value="NO UNIFORM">NO UNIFORM</option>
+        <option value="DRESS CODE">DRESS CODE</option>
+        <option value="HAIR COLOR">HAIR COLOR</option>
+        <option value="PIERCINGS">PIERCINGS</option>
+        <option value="MISCONDUCT">MISCONDUCT</option>
+        <option value="Others">OTHERS</option>
+    </select>
+    <input type="text" id="minorOther" placeholder="Specify Other Minor Offense" style="display:none; margin-top:-10px;">
+
+    <!-- Date Dropdown -->
+    <div style="display:flex; gap:10px; margin-bottom:15px;">
+        <select id="month" required>
+            <option value="">Month</option>
+            <option value="01">January</option><option value="02">February</option><option value="03">March</option>
+            <option value="04">April</option><option value="05">May</option><option value="06">June</option>
+            <option value="07">July</option><option value="08">August</option><option value="09">September</option>
+            <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+        <select id="day" required><option value="">Day</option></select>
+        <select id="year" required><option value="">Year</option></select>
+    </div>
+
+    <button type="button" id="saveBtn">💾 Save Record</button>
+    <button type="button" class="viewBtn" onclick="window.location='records.html'">📋 View Records</button>
+    <button type="button" class="logoutBtn" onclick="logout()">🚪 Logout</button>
+    
+    <p id="status"></p>
+</form>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+
+const firebaseConfig = { apiKey:"AIzaSyDFT7z-AmRLu8lig84D_tKA9OhF7joW9c0", authDomain:"sasosystem-206d0.firebaseapp.com", projectId:"sasosystem-206d0", storageBucket:"sasosystem-206d0.firebasestorage.app", messagingSenderId:"526763192518", appId:"1:526763192518:web:b1f544270439e8664067c7" };
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const status = document.getElementById("status");
+
+// Minor Offense "Others" toggle
+const minorSelect = document.getElementById("minor");
+const minorOther = document.getElementById("minorOther");
+minorSelect.addEventListener("change",()=>{ minorSelect.value==="Others"?minorOther.style.display="block":(minorOther.style.display="none", minorOther.value=""); });
+
+// Populate Day & Year
+const daySelect = document.getElementById("day");
+const yearSelect = document.getElementById("year");
+for(let d=1;d<=31;d++){ daySelect.innerHTML+=`<option value="${String(d).padStart(2,'0')}">${d}</option>` }
+const currentYear = new Date().getFullYear();
+for(let y=currentYear;y>=2000;y--){ yearSelect.innerHTML+=`<option value="${y}">${y}</option>` }
+
+// Auth check
+onAuthStateChanged(auth,u=>{ if(!u) window.location.href="login.html"; });
+window.logout=async()=>{ await signOut(auth); window.location.href="login.html"; };
+
+// Save Record
+document.getElementById("saveBtn").addEventListener("click",async()=>{
+    const name = document.getElementById("name").value.trim();
+    const student_number = document.getElementById("student_number").value.trim();
+    const cca_email = document.getElementById("cca_email").value.trim();
+    const course = document.getElementById("course").value.trim();
+    const major = document.getElementById("major").value.trim();
+    const minor = minorSelect.value==="Others"?minorOther.value.trim():minorSelect.value;
+    const month = document.getElementById("month").value;
+    const day = document.getElementById("day").value;
+    const year = document.getElementById("year").value;
+
+    if(!name||!student_number||!cca_email||!course){ status.style.color="red"; status.innerText="Fill all required fields!"; return; }
+    if(!month||!day||!year){ status.style.color="red"; status.innerText="Select a complete date!"; return; }
+
+    const clientDate = `${year}-${month}-${day}`;
+
+    try{
+        await addDoc(collection(db,"studentRecords"),{
+            name, student_number, cca_email, course, major, minor,
+            date: clientDate,
+            created_at: serverTimestamp(),
+            last_updated: serverTimestamp()
+        });
+        status.style.color="green";
+        status.innerText="Record saved successfully!";
+        document.getElementById("recordForm").reset();
+    }catch(err){ status.style.color="red"; status.innerText="Error saving record: "+err.message; console.error(err); }
+});
+</script>
+</body>
+</html>

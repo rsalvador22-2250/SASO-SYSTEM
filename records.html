@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Records</title>
+<link rel="icon" type="image/jpg" href="school logo.jpg"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== Global ===== */
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Poppins',sans-serif;}
+body{background:#e9fff0;padding:20px;color:#333;}
+
+/* ===== Headline ===== */
+h2{text-align:center;color:#1a5e37;margin-bottom:30px;font-size:30px;font-weight:700;text-shadow:1px 1px 2px rgba(0,0,0,0.1);}
+
+/* ===== Top Bar ===== */
+.top-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:25px;}
+.add-btn{background: linear-gradient(135deg,#2d7a46,#1a5e37); color:white; padding:12px 22px; border:none; border-radius:12px; cursor:pointer; font-weight:500; transition: all 0.3s ease;}
+.add-btn:hover{transform: translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.2);}
+.search-box{padding:12px 15px;border:2px solid #296b41;border-radius:12px;max-width:280px;transition: all 0.3s ease;}
+.search-box:focus{outline:none;border-color:#1a5e37;box-shadow:0 0 8px rgba(41,107,65,0.3);}
+
+/* ===== Status ===== */
+#status{text-align:center;margin:15px 0;font-weight:500;font-size:15px;color:#296b41;}
+
+/* ===== Table ===== */
+.table-container{overflow-x:auto;border-radius:14px;}
+table{width:100%;border-collapse: separate;border-spacing:0 12px;transition: all 0.3s ease;}
+th,td{padding:12px 15px;text-align:center;transition: all 0.3s ease;}
+th{background:#296b41;color:white;font-weight:600;text-transform:uppercase;border-radius:8px 8px 0 0;}
+tr{background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.05);transition: all 0.2s ease;}
+tr:hover{transform: translateY(-3px);box-shadow:0 6px 15px rgba(0,0,0,0.15);}
+
+/* ===== Buttons in table ===== */
+button.action-btn{padding:6px 12px;border:none;border-radius:8px;cursor:pointer;font-size:13px;margin:2px;color:#fff;transition: all 0.2s ease;}
+.edit-btn{background:#1b9448;} .edit-btn:hover{background:#147538;}
+.delete-btn{background:#c62828;} .delete-btn:hover{background:#a41f1f;}
+.add-offense-btn{background:#ff9800;} .add-offense-btn:hover{background:#e68900;}
+.send-btn{background:#007bff;} .send-btn:hover{background:#005bb5;}
+
+/* ===== Mobile responsive ===== */
+@media (max-width:768px){
+  table, thead, tbody, th, td, tr{display:block;width:100%;}
+  th{display:none;}
+  tr{margin-bottom:15px;border-radius:12px;padding:15px;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+  td{text-align:left;padding:10px;position:relative;border-bottom:none;}
+  td::before{content:attr(data-label);font-weight:bold;color:#296b41;display:block;margin-bottom:5px;}
+  td[data-label="Actions"] button{width:48%;margin-top:5px;font-size:12px;margin-right:2%;}
+}
+</style>
+</head>
+
+<body>
+
+<h2>📋 Student Records</h2>
+
+<div class="top-bar">
+  <div>
+    <button class="add-btn" onclick="window.location='index.html'">➕ Add New Record</button>
+    <button class="add-btn" onclick="logout()">🚪 Logout</button>
+  </div>
+  <input id="searchInput" class="search-box" placeholder="🔍 Search student">
+</div>
+
+<p id="status"></p>
+
+<div class="table-container">
+  <table id="recordTable"></table>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+
+const firebaseConfig = { apiKey:"AIzaSyDFT7z-AmRLu8lig84D_tKA9OhF7joW9c0", authDomain:"sasosystem-206d0.firebaseapp.com", projectId:"sasosystem-206d0", storageBucket:"sasosystem-206d0.firebasestorage.app", messagingSenderId:"526763192518", appId:"1:526763192518:web:b1f544270439e8664067c7" };
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const status = document.getElementById("status");
+
+onAuthStateChanged(auth,u=>{ if(!u) location="login.html"; });
+window.logout=async()=>{ await signOut(auth); location="login.html"; };
+
+async function loadRecords(){
+  const table=document.getElementById("recordTable");
+  table.innerHTML=`<tr>
+    <th>Name</th><th>Student Number</th><th>Course</th><th>CCA Email</th>
+    <th>Major</th><th>Minor</th><th>No./Total Major</th><th>No./Total Minor</th>
+    <th>Date</th><th>Actions</th>
+  </tr>`;
+
+  const snap=await getDocs(collection(db,"studentRecords"));
+  snap.forEach(d=>{
+    const r=d.data();
+    const major=r.major||"", minor=r.minor||"";
+    const row=table.insertRow();
+    row.innerHTML=`<td>${r.name||""}</td><td>${r.student_number||""}</td>
+    <td>${r.course||""}</td><td>${r.cca_email||""}</td>
+    <td>${major}</td><td>${minor}</td>
+    <td>${major?major.split("|").length:0}</td>
+    <td>${minor?minor.split("|").length:0}</td>
+    <td>${r.date||""}</td>
+    <td>
+      <button class="action-btn edit-btn" onclick="editRecord('${d.id}')">Edit</button>
+      <button class="action-btn delete-btn" onclick="deleteRecord('${d.id}')">Delete</button>
+      <button class="action-btn add-offense-btn" onclick="location.href='add_offense.html?id=${d.id}'">➕ Add Offense</button>
+      <button class="action-btn send-btn" onclick="sendRecord('${d.id}')">📤 Send Doc</button>
+    </td>`;
+  });
+}
+
+async function editRecord(id){  
+  const ref=doc(db,"studentRecords",id);
+  const snap=await getDoc(ref);
+  const r=snap.data();
+  const name = prompt("Name:",r.name||""); if(name===null) return;
+  const student_number = prompt("Student Number:",r.student_number||""); if(student_number===null) return;
+  const course = prompt("Course:",r.course||""); if(course===null) return;
+  const cca_email = prompt("CCA Email:",r.cca_email||""); if(cca_email===null) return;
+  const major = prompt("Major offenses ( | separated ):",r.major||""); if(major===null) return;
+  const minor = prompt("Minor offenses ( | separated ):",r.minor||""); if(minor===null) return;
+  const date = prompt("Date (YYYY-MM-DD):", r.date||""); if(date===null) return;
+
+  await updateDoc(ref,{name, student_number, course, cca_email, major, minor, date, last_updated:serverTimestamp()});
+  status.style.color="green"; status.innerText="Record updated!";
+  loadRecords();
+}
+
+async function deleteRecord(id){ if(confirm("Delete record?")){ await deleteDoc(doc(db,"studentRecords",id)); loadRecords(); } }
+async function sendRecord(id){ if(!confirm("Send to Microsoft Word?")) return; const docId="1xVaIORaF4Ll6sVHu8bmXUE0dK_E46gc5m5-1FM8T9o8"; window.open(`https://docs.google.com/document/d/${docId}/export?format=docx`,"_blank"); const snap=await getDoc(doc(db,"studentRecords",id)); await setDoc(doc(db,"sentRecords",id),{...snap.data(), sent_at:serverTimestamp()}); }
+
+document.getElementById("searchInput").addEventListener("keyup",e=>{ const v=e.target.value.toLowerCase(); document.querySelectorAll("#recordTable tr").forEach((r,i)=>{ if(i===0) return; r.style.display=r.innerText.toLowerCase().includes(v)?"":"none"; }); });
+
+window.editRecord=editRecord; window.deleteRecord=deleteRecord; window.sendRecord=sendRecord;
+
+loadRecords();
+</script>
+</body>
+</html>
